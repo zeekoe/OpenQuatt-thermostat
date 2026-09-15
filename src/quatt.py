@@ -1,131 +1,47 @@
-"""
-	Example for 4.2 inch black & white Waveshare E-ink screen
-	Run on ESP32
-"""
+#!/usr/bin/env python3
+import sys
 
-import machine
-import epaper4in2
-from machine import Pin, SPI
+from fetch_openquatt_metrics import (
+    FetchError,
+    fetch_openquatt_metrics,
+)
 
-# HSPI (3) on ESP32 - but with SCK and MISO swapped?! (this is the E-Paper_ESP32_Driver_Board)
-sck = Pin(13)
-miso = Pin(12)
-mosi = Pin(14)
-dc = Pin(27)
-cs = Pin(15)
-rst = Pin(26)
-busy = Pin(25)
-spi = machine.SoftSPI(baudrate=2000000, polarity=0, phase=0, sck=sck, miso=miso, mosi=mosi)
+fields_to_fetch = (
+    ("hp1OutsideTemp", "sensor", "HP1 - Outside temperature"),
+    ("roomTemp", "sensor", "Room Temperature (Selected)"),
+    ("supplyTemp", "sensor", "Water Supply Temp (Selected)"),
+    ("totalHeat", "sensor", "Total Heat Power"),
+    ("totalCoolingPower", "sensor", "Total Cooling Power"),
+    ("totalCop", "sensor", "Total COP"),
+    ("hp1Freq", "sensor", "HP1 - Compressor frequency"),
+    ("hp1WaterIn", "sensor", "HP1 - Water in temperature"),
+    ("hp1WaterOut", "sensor", "HP1 - Water out temperature"),
+    ("hp1Power", "sensor", "HP1 - Power Input"),
+    ("hp1EvaporatorCoilTemp", "sensor", "HP1 - Evaporator coil temperature"),
+)
 
-e = epaper4in2.EPD(spi, cs, dc, rst, busy)
-e.init()
+def print_results(metrics):
+    label_width = max(len(item["label"]) for item in metrics["results"])
+    for item in metrics["results"]:
+        print("%-*s : %s" % (label_width, item["label"], item["value"]))
 
-w = 400
-h = 300
-x = 0
-y = 0
+    if metrics["missing"]:
+        print(
+            "\nMissing keys: %s" % ", ".join(str(item) for item in metrics["missing"]),
+            file=sys.stderr,
+        )
+    if metrics["errors"]:
+        print("\nErrors: %s" % metrics["errors"], file=sys.stderr)
 
-# --------------------
+try:
+    metrics = fetch_openquatt_metrics(
+        url="http://openquatt.lan:80/openquatt/entities",
+        display_fields=fields_to_fetch
+    )
+except FetchError as exc:
+    print(str(exc), file=sys.stderr)
 
-# use a frame buffer
-# 400 * 300 / 8 = 15000 - thats a lot of pixels
-import framebuf
-buf = bytearray(w * h // 8)
-fb = framebuf.FrameBuffer(buf, w, h, framebuf.MONO_HLSB)
-black = 0
-white = 1
-fb.fill(white)
+if not metrics["ok"]:
+    print("Request failed: %s" % metrics["payload"], file=sys.stderr)
 
-# --------------------
-
-# write hello world with black bg and white text
-from image_dark import hello_world_dark
-from image_light import hello_world_light
-print('Image dark')
-bufImage = hello_world_dark
-fbImage = framebuf.FrameBuffer(bufImage, 128, 296, framebuf.MONO_HLSB)
-fb.blit(fbImage, 20, 2)
-bufImage = hello_world_light
-fbImage = framebuf.FrameBuffer(bufImage, 128, 296, framebuf.MONO_HLSB)
-fb.blit(fbImage, 168, 2)
-e.display_frame(buf)
-
-# --------------------
-
-# write hello world with white bg and black text
-print('Image light')
-#e.display_frame(hello_world_light)
-
-# --------------------
-
-
-print('Frame buffer things')
-fb.fill(white)
-fb.text('Hello World',30,0,black)
-fb.pixel(30, 10, black)
-fb.hline(30, 30, 10, black)
-fb.vline(30, 50, 10, black)
-fb.line(30, 70, 40, 80, black)
-fb.rect(30, 90, 10, 10, black)
-fb.fill_rect(30, 110, 10, 10, black)
-for row in range(0,36):
-	fb.text(str(row),0,row*8,black)
-fb.text('Line 36',0,288,black)
-e.display_frame(buf)
-
-# --------------------
-
-# wrap text inside a box
-black = 0
-white = 1
-# clear
-fb.fill(white)
-# display as much as this as fits in the box
-str = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam vel neque in elit tristique vulputate at et dui. Maecenas nec felis lectus. Pellentesque sit amet facilisis dui. Maecenas ac arcu euismod, tempor massa quis, ultricies est.'
-
-# this could be useful as a new method in FrameBuffer
-def text_wrap(str,x,y,color,w,h,border=None):
-	# optional box border
-	if border is not None:
-		fb.rect(x, y, w, h, border)
-	cols = w // 8
-	# for each row
-	j = 0
-	for i in range(0, len(str), cols):
-		# draw as many chars fit on the line
-		fb.text(str[i:i+cols], x, y + j, color)
-		j += 8
-		# dont overflow text outside the box
-		if j >= h:
-			break
-
-# clear
-fb.fill(white)
-
-# draw text box 1
-# box position and dimensions
-print('Box 1')
-bx = 8
-by = 8
-bw = 112 #  = 14 cols
-bh = 112 #  = 14 rows (196 chars in total)
-text_wrap(str,bx,by,black,bw,bh,black)
-e.display_frame(buf)
-
-# draw text box 2
-print('Box 2 & 3')
-bx = 0
-by = 128
-bw = w # 128 = 16 cols
-bh = 6 * 8 # 48 = 6 rows (96 chars in total)
-text_wrap(str,bx,by,black,bw,bh,black)
-
-# draw text box 3
-bx = 0
-by = 184
-bw = w//2 # 64 = 8 cols
-bh = 8 * 8 # 64 = 8 rows (64 chars in total)
-text_wrap(str,bx,by,black,bw,bh,None)
-e.display_frame(buf)
-
-# --------------------
+print_results(metrics)
