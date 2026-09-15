@@ -6,6 +6,8 @@
 import machine
 import epaper4in2
 from machine import Pin, SPI
+import framebuf
+import struct
 
 # HSPI (3) on ESP32 - but with SCK and MISO swapped?! (this is the E-Paper_ESP32_Driver_Board)
 sck = Pin(13)
@@ -20,12 +22,47 @@ spi = machine.SoftSPI(baudrate=2000000, polarity=0, phase=0, sck=sck, miso=miso,
 e = epaper4in2.EPD(spi, cs, dc, rst, busy)
 e.init()
 
+# Display dimensions
 w = 400
 h = 300
-x = 0
-y = 0
 
 # --------------------
+
+# Initialize frame buffer
+black = 0
+white = 1
+
+def load_pbm_image(file_path):
+    """Load a PBM (Portable Bitmap) image file"""
+    with open(file_path, 'rb') as f:
+        # Read header
+        magic = f.readline().strip()
+        if magic != b'P4':
+            raise ValueError("Only P4 (binary PBM) format is supported")
+
+        # Skip comments
+        while True:
+            line = f.readline()
+            if not line.startswith(b'#'):
+                break
+
+        # Read dimensions
+        width, height = map(int, line.split())
+        if width != w or height != h:
+            raise ValueError(f"Image dimensions {width}x{height} don't match display {w}x{h}")
+
+        # Read image data
+        return bytearray(f.read())
+
+try:
+    buf = load_pbm_image('background.pbm')
+    fb = framebuf.FrameBuffer(buf, w, h, framebuf.MONO_HLSB)
+except Exception as e:
+    print(f"Error loading image: {e}")
+    buf = bytearray(w * h // 8)
+    fb = framebuf.FrameBuffer(buf, w, h, framebuf.MONO_HLSB)
+    fb.fill(white)  # Fallback to white background
+
 
 import sys
 
@@ -48,33 +85,6 @@ fields_to_fetch = (
     ("hp1EvaporatorCoilTemp", "sensor", "HP1 - Evaporator coil temperature"),
 )
 
-# use a frame buffer
-# 400 * 300 / 8 = 15000 - thats a lot of pixels
-import framebuf
-
-buf = bytearray(w * h // 8)
-fb = framebuf.FrameBuffer(buf, w, h, framebuf.MONO_HLSB)
-black = 0
-white = 1
-fb.fill(white)
-
-
-def print_results(metrics):
-    label_width = max(len(item["label"]) for item in metrics["results"])
-    display_row = 0
-    for item in metrics["results"]:
-        fb.text("%-*s : %s" % (label_width, item["label"], item["value"]), 0, display_row * 8, black)
-        display_row = display_row + 1
-
-    if metrics["missing"]:
-        print(
-            "\nMissing keys: %s" % ", ".join(str(item) for item in metrics["missing"]),
-            file=sys.stderr,
-        )
-    if metrics["errors"]:
-        print("\nErrors: %s" % metrics["errors"], file=sys.stderr)
-
-
 try:
     metrics = fetch_openquatt_metrics(
         url="http://openquatt.lan:80/openquatt/entities",
@@ -86,7 +96,30 @@ except FetchError as exc:
 if not metrics["ok"]:
     print("Request failed: %s" % metrics["payload"], file=sys.stderr)
 
-fb.fill(white)
-print_results(metrics)
+def get_value_by_key(key):
+    for item in metrics["results"]:
+        if item["key"] == key:
+            return item["value"]
+    return None  # Return None if key not found
+
+import microfont
+from microfont import MicroFont
+
+font = MicroFont("dejavub12.mfnt",cache_index=True)
+
+
+def print_text(text, x, y):
+    font.write(text, fb, framebuf.MONO_HLSB, 400, 300, x, y, black, rot=0)
+
+
+print_text(get_value_by_key("roomTemp"), 250, 140)
+print_text(get_value_by_key("hp1Power"), 125, 77)
+print_text(get_value_by_key("hp1Freq"), 77, 210)
+print_text(get_value_by_key("hp1WaterIn"), 110, 200)
+print_text(get_value_by_key("hp1WaterOut"), 105, 143)
+print_text(get_value_by_key("supplyTemp"), 172, 140)
+print_text(get_value_by_key("totalHeat"), 105, 160)
+print_text(get_value_by_key("hp1OutsideTemp"), 84, 35)
+print_text(get_value_by_key("hp1EvaporatorCoilTemp"), 23, 142)
 e.display_frame(buf)
 

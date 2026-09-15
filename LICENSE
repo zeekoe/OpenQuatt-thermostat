@@ -11,6 +11,12 @@ Micropython uftpd client:
 # Copyright (c) 2020 Jan Wieck Use separate FTP servers per socket for STA + AP mode
 # Copyright (c) 2021 JD Smith Use a preallocated buffer and improve error handling.
 
+Microfont library:
+Copyright (c) 2024 Salvatore Sanfilippo.
+
+Fonts:
+See DejaVu Fonts — License.html.
+
 The other code:
 Copyright (c) 2026 Ronald Teune
 

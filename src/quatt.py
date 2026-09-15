@@ -43,5 +43,6 @@ except FetchError as exc:
 
 if not metrics["ok"]:
     print("Request failed: %s" % metrics["payload"], file=sys.stderr)
+print(metrics["results"])
 
 print_results(metrics)
