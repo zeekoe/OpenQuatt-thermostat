@@ -1,6 +1,10 @@
-# JetBrains & bin files
+# Various
 /.idea
 *.bin
+*.mpy
+*.swp
+config.py
+webrepl_cfg.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

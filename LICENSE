@@ -4,6 +4,13 @@ E-paper driver code and example:
 Copyright (c) 2017 Waveshare
 Copyright (c) 2018 Mike Causer
 
+Micropython uftpd client:
+# Copyright (c) 2016 Christopher Popp (initial ftp server framework)
+# Copyright (c) 2016 Paul Sokolovsky (background execution control structure)
+# Copyright (c) 2016 Robert Hammelrath (putting the pieces together and a few extensions)
+# Copyright (c) 2020 Jan Wieck Use separate FTP servers per socket for STA + AP mode
+# Copyright (c) 2021 JD Smith Use a preallocated buffer and improve error handling.
+
 The other code:
 Copyright (c) 2026 Ronald Teune
 
