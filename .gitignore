@@ -5,6 +5,7 @@
 *.swp
 config.py
 webrepl_cfg.py
+/src/screen.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
