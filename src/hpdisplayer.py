@@ -133,7 +133,7 @@ def render_to_framebuffer(fb):
                 return item["value"]
         return None
 
-    font = MicroFont(_resource_path("dejavub12.mfnt"), cache_index=True)
+    font = MicroFont(_resource_path("dejavub14.mfnt"), cache_index=True)
 
     def print_text(text, x, y):
         font.write(
@@ -149,14 +149,14 @@ def render_to_framebuffer(fb):
         )
 
     print_text(get_value_by_key("roomTemp"), 250, 140)
-    print_text(get_value_by_key("hp1Power"), 125, 77)
+    print_text(get_value_by_key("hp1Power"), 125, 74)
     print_text(get_value_by_key("hp1Freq"), 77, 210)
     print_text(get_value_by_key("hp1WaterIn"), 110, 200)
-    print_text(get_value_by_key("hp1WaterOut"), 105, 143)
-    print_text(get_value_by_key("supplyTemp"), 172, 140)
-    print_text(get_value_by_key("totalHeat"), 105, 160)
-    print_text(get_value_by_key("hp1OutsideTemp"), 84, 35)
-    print_text(get_value_by_key("hp1EvaporatorCoilTemp"), 23, 142)
+    print_text(get_value_by_key("hp1WaterOut"), 107, 144)
+    print_text(get_value_by_key("supplyTemp"), 160, 126)
+    print_text(get_value_by_key("totalHeat"), 107, 160)
+    print_text(get_value_by_key("hp1OutsideTemp"), 84, 33)
+    print_text(get_value_by_key("hp1EvaporatorCoilTemp"), 15, 138)
 
     now = time.localtime()
     draw_clock(fb, font, 356, 46, 40, now[3], now[4])
