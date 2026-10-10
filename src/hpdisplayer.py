@@ -148,15 +148,27 @@ def render_to_framebuffer(fb):
             rot=0,
         )
 
-    print_text(get_value_by_key("roomTemp"), 250, 140)
-    print_text(get_value_by_key("hp1Power"), 125, 74)
-    print_text(get_value_by_key("hp1Freq"), 77, 210)
-    print_text(get_value_by_key("hp1WaterIn"), 110, 200)
-    print_text(get_value_by_key("hp1WaterOut"), 107, 144)
-    print_text(get_value_by_key("supplyTemp"), 160, 126)
-    print_text(get_value_by_key("totalHeat"), 107, 160)
-    print_text(get_value_by_key("hp1OutsideTemp"), 84, 33)
-    print_text(get_value_by_key("hp1EvaporatorCoilTemp"), 15, 138)
-
+    def print_white(text, x, y):
+        font.write(
+            text,
+            fb,
+            _framebuf_MONO_HLSB,
+            DISPLAY_WIDTH,
+            DISPLAY_HEIGHT,
+            x,
+            y,
+            WHITE,
+            rot=0,
+        )
+    print_text(get_value_by_key("roomTemp"), 225, 265)
+    print_text(get_value_by_key("hp1Power"), 112, 143)
+    print_text(get_value_by_key("hp1Freq"), 56, 283)
+    print_text(get_value_by_key("hp1WaterIn"), 114, 262)
+    print_text(get_value_by_key("hp1WaterOut"), 94, 200)
+    print_text(get_value_by_key("supplyTemp"), 126, 221)
+    print_text(get_value_by_key("totalHeat"), 95, 235)
+    print_text(get_value_by_key("hp1OutsideTemp"), 70, 102)
+    print_text(get_value_by_key("hp1EvaporatorCoilTemp"), 8, 205)
+    print_white("19.5", 346, 268)
     now = time.localtime()
     draw_clock(fb, font, 356, 46, 40, now[3], now[4])
