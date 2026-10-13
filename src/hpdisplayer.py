@@ -44,8 +44,8 @@ def _resource_path(name):
         return name
 
 
-def load_pbm_image(file_path):
-    """Load a PBM (Portable Bitmap) image file"""
+def load_pbm(file_path):
+    """Load a PBM (Portable Bitmap) image file as (buffer, width, height)."""
     with open(file_path, "rb") as f:
         magic = f.readline().strip()
         if magic != b"P4":
@@ -57,13 +57,14 @@ def load_pbm_image(file_path):
                 break
 
         width, height = map(int, line.split())
-        if width != DISPLAY_WIDTH or height != DISPLAY_HEIGHT:
-            raise ValueError(
-                "Image dimensions %sx%s don't match display %sx%s"
-                % (width, height, DISPLAY_WIDTH, DISPLAY_HEIGHT)
-            )
 
-        return bytearray(f.read())
+        return bytearray(f.read()), width, height
+
+
+def load_pbm_image(file_path):
+    """Load a PBM (Portable Bitmap) image file"""
+    buf, _width, _height = load_pbm(file_path)
+    return buf
 
 
 def draw_clock(fb, font, cx, cy, r, hour, minute):
@@ -172,3 +173,5 @@ def render_to_framebuffer(fb):
     print_white("19.5", 346, 268)
     now = time.localtime()
     draw_clock(fb, font, 356, 46, 40, now[3], now[4])
+    cloud, cloud_width, cloud_height = load_pbm(_resource_path("cloud.pbm"))
+    fb.blit((cloud, cloud_width, cloud_height, _framebuf_MONO_HLSB), 0, 0)

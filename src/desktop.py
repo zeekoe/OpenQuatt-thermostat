@@ -19,10 +19,12 @@ _framebuf_MONO_HLSB = 3
 
 
 class _FrameBuffer:
-    def __init__(self, buf, width, height, mode):
+    def __init__(self, buf, width, height, mode, stride=None):
         self._buf = buf
         self.width = width
         self.height = height
+        self.format = mode
+        self.stride = width if stride is None else stride
 
     def fill(self, value):
         pattern = 0xFF if value else 0x00
@@ -104,8 +106,62 @@ class _FrameBuffer:
             dd_fx += 2
             f += dd_fx
 
+    def blit(self, source, x, y, key=-1, palette=None):
+        """Blit a 1-bit MONO_HLSB source (FrameBuffer or tuple) using PIL."""
+        from PIL import Image
+
+        buf, width, height, fmt, stride = _unpack_blit_source(source)
+        if fmt != _framebuf_MONO_HLSB:
+            raise ValueError("only MONO_HLSB blit sources are supported")
+        if width <= 0 or height <= 0:
+            return
+
+        row_bytes = (width + 7) // 8
+        stride_bytes = ((stride + 7) & ~7) // 8
+        if stride_bytes == row_bytes:
+            packed = bytes(buf[: row_bytes * height])
+        else:
+            data = bytes(buf)
+            packed = b"".join(
+                data[y * stride_bytes : y * stride_bytes + row_bytes]
+                for y in range(height)
+            )
+        src = Image.frombytes("1", (width, height), packed).convert("L")
+
+        mask = None
+        if key >= 0:
+            key_value = 255 if key else 0
+            mask = src.point(lambda value, k=key_value: 0 if value == k else 255)
+
+        dst = Image.frombytes(
+            "1", (self.width, self.height), bytes(self._buf)
+        ).convert("L")
+        dst.paste(src, (x, y), mask)
+        self._buf[:] = dst.convert("1", dither=Image.Dither.NONE).tobytes()
+
+
+def _unpack_blit_source(source):
+    if isinstance(source, _FrameBuffer):
+        return source._buf, source.width, source.height, source.format, source.stride
+    if isinstance(source, (tuple, list)):
+        if len(source) == 4:
+            buf, width, height, fmt = source
+            stride = width
+        elif len(source) == 5:
+            buf, width, height, fmt, stride = source
+        else:
+            raise ValueError(
+                "blit source must be (buffer, width, height, format[, stride])"
+            )
+        return buf, width, height, fmt, stride
+    raise TypeError(
+        "blit source must be a FrameBuffer or a "
+        "(buffer, width, height, format) tuple"
+    )
+
+
 _framebuf = types.ModuleType("framebuf")
-_framebuf.MONO_HLSB = 3
+_framebuf.MONO_HLSB = _framebuf_MONO_HLSB
 _framebuf.RGB565 = 1
 _framebuf.FrameBuffer = _FrameBuffer
 sys.modules["framebuf"] = _framebuf
