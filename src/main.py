@@ -7,8 +7,10 @@ import machine
 import epaper4in2
 import framebuf
 from machine import Pin
-
 import hpdisplayer
+import ntptime
+
+ntptime.settime()
 
 # HSPI (3) on ESP32 - but with SCK and MISO swapped?! (this is the E-Paper_ESP32_Driver_Board)
 sck = Pin(13)

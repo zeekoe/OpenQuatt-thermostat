@@ -121,6 +121,57 @@ def fetch_entities(url, detail, display_fields):
     raise FetchError("No supported HTTP client found; install urequests")
 
 
+def _response_text(response):
+    text = getattr(response, "text", None)
+    if text is not None:
+        if isinstance(text, bytes):
+            return text.decode("utf-8")
+        return text
+
+    content = getattr(response, "content", None)
+    if content is None and hasattr(response, "read"):
+        content = response.read()
+    if isinstance(content, bytes):
+        return content.decode("utf-8")
+    return content if content is not None else ""
+
+
+def _fetch_text_with_urequests(url):
+    response = None
+    try:
+        response = requests_compat.get(url)
+        status_code = getattr(response, "status_code", 200)
+        if status_code >= 400:
+            raise FetchError("HTTP error: %s" % status_code)
+        return _response_text(response)
+    except FetchError:
+        raise
+    except Exception as exc:
+        raise FetchError("Connection error: %s" % exc)
+    finally:
+        if response is not None and hasattr(response, "close"):
+            response.close()
+
+
+def _fetch_text_with_urllib(url):
+    request = urllib.request.Request(url, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        raise FetchError("HTTP error: %s %s" % (exc.code, exc.reason))
+    except urllib.error.URLError as exc:
+        raise FetchError("Connection error: %s" % exc.reason)
+
+
+def fetch_text(url):
+    if requests_compat is not None:
+        return _fetch_text_with_urequests(url)
+    if urllib is not None:
+        return _fetch_text_with_urllib(url)
+    raise FetchError("No supported HTTP client found; install urequests")
+
+
 def format_entity_value(entity):
     if not entity:
         return "missing"
