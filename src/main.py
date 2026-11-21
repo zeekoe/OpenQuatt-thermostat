@@ -9,6 +9,7 @@ import framebuf
 from machine import Pin
 import hpdisplayer
 import ntptime
+from time import sleep
 
 ntptime.settime()
 
@@ -35,5 +36,7 @@ fb = framebuf.FrameBuffer(
     buf, hpdisplayer.DISPLAY_WIDTH, hpdisplayer.DISPLAY_HEIGHT, framebuf.MONO_HLSB
 )
 
-hpdisplayer.render_to_framebuffer(fb)
-e.display_frame(buf)
+while True:
+    hpdisplayer.render_to_framebuffer(fb)
+    e.display_frame(buf)
+    sleep(60)
