@@ -179,7 +179,7 @@ def render_to_framebuffer(fb):
     fb.blit((cloud, cloud_width, cloud_height, _framebuf_MONO_HLSB), 0, 0)
     try:
         measurement = fetch_text("http://192.168.1.120:8267/simple")
-        measurement = re.sub(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+Z", r"\1", measurement)
+        measurement = re.sub(r"(.*:\d+:\d+)\.\d+Z", r"\1", measurement)
         print_text(measurement, 50, 8)
     except FetchError as exc:
         print(str(exc), file=sys.stderr)

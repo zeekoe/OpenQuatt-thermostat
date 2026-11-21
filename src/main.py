@@ -26,17 +26,15 @@ spi = machine.SoftSPI(baudrate=2000000, polarity=0, phase=0, sck=sck, miso=miso,
 e = epaper4in2.EPD(spi, cs, dc, rst, busy)
 e.init()
 
-try:
-    buf = hpdisplayer.load_pbm_image(hpdisplayer._resource_path("background.pbm"))
-except Exception as exc:
-    print("Error loading image: %s" % exc)
-    buf = bytearray([0xFF]) * (hpdisplayer.DISPLAY_WIDTH * hpdisplayer.DISPLAY_HEIGHT // 8)
-
-fb = framebuf.FrameBuffer(
-    buf, hpdisplayer.DISPLAY_WIDTH, hpdisplayer.DISPLAY_HEIGHT, framebuf.MONO_HLSB
-)
-
 while True:
+    try:
+        buf = hpdisplayer.load_pbm_image(hpdisplayer._resource_path("background.pbm"))
+    except Exception as exc:
+        print("Error loading image: %s" % exc)
+        buf = bytearray([0xFF]) * (hpdisplayer.DISPLAY_WIDTH * hpdisplayer.DISPLAY_HEIGHT // 8)
+    fb = framebuf.FrameBuffer(
+        buf, hpdisplayer.DISPLAY_WIDTH, hpdisplayer.DISPLAY_HEIGHT, framebuf.MONO_HLSB
+    )
     hpdisplayer.render_to_framebuffer(fb)
     e.display_frame(buf)
     sleep(60)
