@@ -10,6 +10,7 @@ from machine import Pin
 import hpdisplayer
 import ntptime
 from time import sleep
+import gc
 
 ntptime.settime()
 
@@ -38,3 +39,4 @@ while True:
     hpdisplayer.render_to_framebuffer(fb)
     e.display_frame(buf)
     sleep(60)
+    gc.collect()
